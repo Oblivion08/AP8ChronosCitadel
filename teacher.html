@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AP8 Teacher Dashboard</title>
+
+<style>
+body{
+    font-family:Arial,sans-serif;
+    background:#071c4d;
+    color:white;
+    padding:20px;
+}
+
+h1{
+    text-align:center;
+    color:gold;
+}
+
+.section{
+    background:#0d245f;
+    margin:15px 0;
+    padding:15px;
+    border-radius:12px;
+}
+
+.guild{
+    display:flex;
+    justify-content:space-between;
+    padding:8px;
+    margin:5px 0;
+    background:#132f78;
+    border-radius:8px;
+}
+
+.rank1{color:gold;}
+.rank2{color:silver;}
+.rank3{color:#cd7f32;}
+</style>
+</head>
+
+<body>
+
+<h1>🏆 AP8 World Quest Dashboard</h1>
+
+<div id="dashboard"></div>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+onSnapshot
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey:"AIzaSyAo4nG5OrgWYMRHwbl2xb4rc9VTMwe8fxY",
+authDomain:"ap8-world-quest.firebaseapp.com",
+projectId:"ap8-world-quest",
+storageBucket:"ap8-world-quest.firebasestorage.app",
+messagingSenderId:"195573811114",
+appId:"1:195573811114:web:41757f872db24203228dd3"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const sections=[
+"8-ABRAHAM",
+"8-ISAAC",
+"8-MOSES",
+"8-EZEKIEL",
+"8-ISAIAH",
+"8-JEREMIAH"
+];
+
+const dashboard=document.getElementById("dashboard");
+
+sections.forEach(section=>{
+
+const div=document.createElement("div");
+div.className="section";
+div.id=section;
+
+div.innerHTML=`
+<h2>${section}</h2>
+<div>Loading...</div>
+`;
+
+dashboard.appendChild(div);
+
+const guildsRef=collection(
+db,
+"sections",
+section,
+"guilds"
+);
+
+onSnapshot(guildsRef,snapshot=>{
+
+const rows=[];
+
+snapshot.forEach(doc=>{
+rows.push(doc.data());
+});
+
+rows.sort(
+(a,b)=>
+(b.xp||0)-(a.xp||0)
+);
+
+const medals=["🥇","🥈","🥉","4️⃣","5️⃣"];
+
+div.innerHTML=`
+<h2>${section}</h2>
+${
+rows.map((g,i)=>`
+<div class="guild">
+<span>
+${medals[i]||""}
+${g.guildName}
+</span>
+
+<span>
+${g.xp||0} XP
+</span>
+</div>
+`).join("")
+}
+`;
+
+});
+
+});
+
+</script>
+
+</body>
+</html>

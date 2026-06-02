@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="tl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AP8 World Quest v2</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <section id="introScreen" class="intro-screen">
+  <div class="stars"></div>
+
+  <div class="intro-card cinematic">
+    <h1 class="chrono-logo">🌌 CHRONOS CITADEL 🌌</h1>
+    <h2 id="introTitle">Ang Nawawalang Timeline</h2>
+
+    <p id="storyText" class="story-text"></p>
+
+    <div id="guildReveal" class="guild-reveal hidden">
+      <h2>Limang Sinaunang Guild</h2>
+      <div class="guild-cards">
+        <div>🏺<br>Antiqua</div>
+        <div>⛵<br>Navigators</div>
+        <div>👑<br>Empires</div>
+        <div>⚔️<br>Guardians</div>
+        <div>🌍<br>Unity</div>
+      </div>
+    </div>
+
+    <button id="startJourneyBtn" class="hidden" onclick="enterGame()">
+      ⚔️ SIMULAN ANG PAGLALAKBAY
+    </button>
+  </div>
+</section>
+
+  <main id="gameApp" class="hidden">
+    <header>
+      <h1>🏰 CHRONOS CITADEL</h1>
+      <p>AP8 World Quest: Ang Nawawalang Timeline</p>
+    </header>
+
+    <nav class="top-nav">
+      <button onclick="showTab('hub')">🗺️ Main Hub</button>
+      <button onclick="showTab('missions')">⚔️ Missions</button>
+      <button onclick="showTab('passport')">📘 Passport</button>
+      <button onclick="showTab('leaderboard')">🏆 Leaderboard</button>
+      <button onclick="toggleMusic()" id="musicBtn">🎵 Music On</button>
+      <button onclick="resetCurrentGuild()">🔄 Reset Guild</button>
+    </nav>
+
+    <section class="setup-panel">
+      <div class="setup-card">
+        <label>Section</label>
+        <select id="sectionSelect" onchange="selectSection()">
+          <option value="">Piliin ang Section</option>
+          <option>8-ABRAHAM</option>
+          <option>8-ISAAC</option>
+          <option>8-MOSES</option>
+          <option>8-EZEKIEL</option>
+          <option>8-ISAIAH</option>
+          <option>8-JEREMIAH</option>
+        </select>
+      </div>
+
+      <div class="setup-card">
+        <label>Guild</label>
+        <select id="guildSelect" onchange="selectGuild()">
+          <option value="">Piliin ang Guild</option>
+          <option value="antiqua">🏺 Antiqua Guild</option>
+          <option value="navigators">⛵ Navigators Guild</option>
+          <option value="empires">👑 Empires Guild</option>
+          <option value="guardians">⚔️ Guardians Guild</option>
+          <option value="unity">🌍 Unity Guild</option>
+        </select>
+      </div>
+
+      <div class="profile-card">
+        <strong id="profileTitle">Walang napiling Guild</strong>
+        <span id="profileMeta">Pumili muna ng section at guild.</span>
+        <span>XP: <strong id="profileXp">0</strong></span>
+        <span>Rank: <strong id="profileRank">Baguhang Manlalakbay</strong></span>
+      </div>
+    </section>
+
+    <section id="hub" class="tab active">
+      <div class="hub-layout">
+        <div class="world-map" id="worldMap">
+          <div class="map-title">
+            <h2>🗺️ Main Hub Map</h2>
+            <p>Makikita rito ang galaw ng bawat guild sa napiling section.</p>
+          </div>
+
+          <svg class="map-path" viewBox="0 0 1000 650" preserveAspectRatio="none">
+            <path d="M120 560 C200 480 120 390 240 340 C365 290 310 180 440 160 C570 140 560 285 680 265 C820 242 745 125 900 75"
+              fill="none" stroke="rgba(255,244,200,.8)" stroke-width="10" stroke-linecap="round" stroke-dasharray="20 18"/>
+          </svg>
+
+          <div id="missionNodes"></div>
+          <div id="guildTokens"></div>
+          <div class="citadel">🏰<br>Chronos Citadel<br><small>Main Hub</small></div>
+        </div>
+
+        <aside class="side-panel">
+          <h2>🏆 Section Race Board</h2>
+          <p id="leaderboardLabel">Pumili muna ng section.</p>
+          <div id="hubLeaderboard"></div>
+          <hr />
+          <h3>🎁 Race Bonus</h3>
+          <p>Kapag unang natapos ang mission sa section:</p>
+          <ul>
+            <li>🥇 1st: +50 XP</li>
+            <li>🥈 2nd: +30 XP</li>
+            <li>🥉 3rd: +20 XP</li>
+            <li>4️⃣ 4th: +10 XP</li>
+            <li>5️⃣ 5th: +5 XP</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section id="missions" class="tab">
+      <div class="code-box">
+        <h2>🔑 Unlock Code</h2>
+        <input id="codeInput" placeholder="I-type ang code dito" />
+        <button onclick="submitCode()">Buksan ang Susunod</button>
+        <p id="codeMessage"></p>
+      </div>
+
+      <h2>Unang Termino</h2>
+      <div id="term1" class="mission-grid"></div>
+
+      <h2>Ikalawang Termino</h2>
+      <div id="term2" class="mission-grid"></div>
+
+      <h2>Ikatlong Termino</h2>
+      <div id="term3" class="mission-grid"></div>
+    </section>
+
+    <section id="passport" class="tab">
+      <h2>📘 Guild Passport</h2>
+      <p>Ang bawat natapos na misyon ay nagkakaroon ng stamp.</p>
+      <div id="passportStamps" class="stamp-grid"></div>
+
+      <h2>🏅 Achievements</h2>
+      <div id="achievements" class="stamp-grid"></div>
+    </section>
+
+    <section id="leaderboard" class="tab">
+      <h2>🏆 Internal Competition</h2>
+      <p>Ranking ng limang guild sa kasalukuyang section.</p>
+      <div id="fullLeaderboard"></div>
+    </section>
+  </main>
+
+  <dialog id="missionDialog">
+    <div class="dialog-content">
+      <h2 id="missionTitle"></h2>
+      <p id="missionBrief"></p>
+      <div id="bossIntro" class="boss-intro hidden"></div>
+      <hr />
+      <p id="questionText"></p>
+      <div id="choices"></div>
+      <p id="resultText"></p>
+      <button class="close-btn" onclick="closeMission()">Isara</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast"></div>
+<script type="module" src="script.js"></script>
+</body>
+</html>
