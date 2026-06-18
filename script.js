@@ -198,6 +198,189 @@ const LESSONS = [
   ]}
 ];
 
+
+/* =========================================================
+   CHRONOS CITADEL V3 PATCH
+   Rule: Every mission becomes a mini-game mission with exactly
+   10 playable items. Map, codes, XP, passport, Firebase, and
+   teacher dashboard remain unchanged.
+========================================================= */
+function normalizeChoices(choices, answer) {
+  const list = Array.isArray(choices) ? [...choices] : [];
+  if (!list.includes(answer)) list.unshift(answer);
+  const defaults = [
+    "Hindi ito ang tamang sagot",
+    "Bahagyang kaugnay lamang",
+    "Walang direktang kaugnayan"
+  ];
+  defaults.forEach(x => { if (list.length < 3 && !list.includes(x)) list.push(x); });
+  return list.slice(0, 4);
+}
+
+function taskFromQuestion(question, fallbackTitle="Chronos Challenge") {
+  const answer = question.c[question.a];
+  return {
+    term: question.q || fallbackTitle,
+    answer,
+    choices: normalizeChoices(question.c, answer)
+  };
+}
+
+function tasksFromExistingGameStages(lesson) {
+  const tasks = [];
+  (lesson.gameStages || []).forEach(stage => {
+    if (Array.isArray(stage.targets)) {
+      stage.targets.forEach(target => {
+        tasks.push({
+          term: `Piliin kung kabilang sa tamang sagot: ${target}`,
+          answer: target,
+          choices: normalizeChoices(stage.options || stage.targets, target)
+        });
+      });
+    }
+    if (Array.isArray(stage.tasks)) {
+      stage.tasks.forEach(task => {
+        tasks.push({
+          term: task.term,
+          answer: task.answer,
+          choices: normalizeChoices(task.choices, task.answer)
+        });
+      });
+    }
+    if (Array.isArray(stage.sequence)) {
+      stage.sequence.forEach((item, idx) => {
+        tasks.push({
+          term: `Ano ang ika-${idx + 1} sa tamang pagkakasunod-sunod?`,
+          answer: item,
+          choices: normalizeChoices(stage.sequence, item)
+        });
+      });
+    }
+  });
+  return tasks;
+}
+
+const UNIQUE_MISSION_TASKS = {
+  1: [{"term": "Tigris at Euphrates", "answer": "Mesopotamia", "choices": ["Mesopotamia", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Indus", "answer": "Harappa Civilization", "choices": ["Harappa Civilization", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Huang He / Yellow River", "answer": "Kabihasnang Tsino", "choices": ["Kabihasnang Tsino", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Ilog Nile", "answer": "Ancient Egypt", "choices": ["Ancient Egypt", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Cuneiform", "answer": "Unang sistema ng pagsulat ng Sumerian", "choices": ["Unang sistema ng pagsulat ng Sumerian", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Selyo / seal", "answer": "Ambag ng Indus sa kalakalan", "choices": ["Ambag ng Indus sa kalakalan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Oracle bones", "answer": "Pinagsulatan ng sinaunang Tsino", "choices": ["Pinagsulatan ng sinaunang Tsino", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pyramids", "answer": "Ambag ng sinaunang Egypt", "choices": ["Ambag ng sinaunang Egypt", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Irigasyon", "answer": "Sistema ng patubig sa lambak-ilog", "choices": ["Sistema ng patubig sa lambak-ilog", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Cradle of Civilization", "answer": "Tawag sa Mesopotamia", "choices": ["Tawag sa Mesopotamia", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  2: [{"term": "Minoan", "answer": "Kabihasnang umusbong sa Crete", "choices": ["Kabihasnang umusbong sa Crete", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Mycenaean", "answer": "Kabihasnang mandirigma sa mainland Greece", "choices": ["Kabihasnang mandirigma sa mainland Greece", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Knossos", "answer": "Palasyo ng mga Minoan", "choices": ["Palasyo ng mga Minoan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Linear A", "answer": "Sistema ng pagsulat ng Minoan", "choices": ["Sistema ng pagsulat ng Minoan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Linear B", "answer": "Sistema ng pagsulat ng Mycenaean", "choices": ["Sistema ng pagsulat ng Mycenaean", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Mediterranean Sea", "answer": "Dagat na sentro ng kalakalan ng Minoan", "choices": ["Dagat na sentro ng kalakalan ng Minoan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Bull-leaping", "answer": "Palakasan ng Minoan", "choices": ["Palakasan ng Minoan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Agamemnon", "answer": "Kaugnay ng Mycenaean", "choices": ["Kaugnay ng Mycenaean", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Thera / Santorini eruption", "answer": "Isa sa dahilan ng paghina ng Minoan", "choices": ["Isa sa dahilan ng paghina ng Minoan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Dorian invasion", "answer": "Isa sa dahilan ng pagbagsak ng Mycenaean", "choices": ["Isa sa dahilan ng pagbagsak ng Mycenaean", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  3: [{"term": "Olmec", "answer": "Ina ng mga kabihasnan sa Mesoamerica", "choices": ["Ina ng mga kabihasnan sa Mesoamerica", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Maya", "answer": "Kilala sa astronomiya at hieroglyphs", "choices": ["Kilala sa astronomiya at hieroglyphs", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Aztec", "answer": "May sistemang pamilihan at mandirigma", "choices": ["May sistemang pamilihan at mandirigma", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Inca", "answer": "Gumamit ng quipu sa pagtatala", "choices": ["Gumamit ng quipu sa pagtatala", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Malalaking batong ulo", "answer": "Ambag o likha ng Olmec", "choices": ["Ambag o likha ng Olmec", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Tenochtitlan", "answer": "Lungsod ng Aztec", "choices": ["Lungsod ng Aztec", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Machu Picchu", "answer": "Kilalang lugar ng Inca", "choices": ["Kilalang lugar ng Inca", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Quipu", "answer": "Tali na gamit sa pagtatala", "choices": ["Tali na gamit sa pagtatala", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kalendaryo", "answer": "Ambag ng Maya at Aztec", "choices": ["Ambag ng Maya at Aztec", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Polynesian", "answer": "Mahuhusay na mandaragat sa rehiyong Pacific", "choices": ["Mahuhusay na mandaragat sa rehiyong Pacific", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  4: [{"term": "Hari / Lugal", "answer": "Pinuno ng lungsod-estado sa Sumer", "choices": ["Pinuno ng lungsod-estado sa Sumer", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pari", "answer": "Namamahala sa relihiyon at seremonya", "choices": ["Namamahala sa relihiyon at seremonya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Eskribang Egyptian", "answer": "Nagtatala ng buwis at batas", "choices": ["Nagtatala ng buwis at batas", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pharaoh", "answer": "Hari at diyos ng Egypt", "choices": ["Hari at diyos ng Egypt", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Brahmin", "answer": "Pari at guro sa sistemang varna", "choices": ["Pari at guro sa sistemang varna", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kshatriya", "answer": "Mandirigma at pinuno sa varna", "choices": ["Mandirigma at pinuno sa varna", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Vaishya", "answer": "Mangangalakal at magsasaka", "choices": ["Mangangalakal at magsasaka", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Shudra", "answer": "Manggagawa at lingkod", "choices": ["Manggagawa at lingkod", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Jati", "answer": "Maraming pangkat batay sa trabaho", "choices": ["Maraming pangkat batay sa trabaho", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Caste system", "answer": "Sistemang batay sa kapanganakan", "choices": ["Sistemang batay sa kapanganakan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  5: [{"term": "Aristokrata", "answer": "Mayayamang namumuno sa Greece", "choices": ["Mayayamang namumuno sa Greece", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Mamamayan / citizens", "answer": "Lalaking may karapatang bumoto sa Athens", "choices": ["Lalaking may karapatang bumoto sa Athens", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kababaihan", "answer": "Limitado ang karapatan sa sinaunang Greece", "choices": ["Limitado ang karapatan sa sinaunang Greece", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Metic", "answer": "Dayuhang naninirahan sa Greece", "choices": ["Dayuhang naninirahan sa Greece", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Alipin", "answer": "Walang kalayaan sa lipunang Greek", "choices": ["Walang kalayaan sa lipunang Greek", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Sparta", "answer": "Militaristang lungsod-estado", "choices": ["Militaristang lungsod-estado", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Athens", "answer": "Kilala sa demokrasya at edukasyon", "choices": ["Kilala sa demokrasya at edukasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Demokrasya", "answer": "Pamamahala na may partisipasyon ng mamamayan", "choices": ["Pamamahala na may partisipasyon ng mamamayan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Parthenon", "answer": "Templong kaugnay ng Athens", "choices": ["Templong kaugnay ng Athens", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Disiplina at lakas militar", "answer": "Pangunahing pagpapahalaga ng Sparta", "choices": ["Pangunahing pagpapahalaga ng Sparta", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  6: [{"term": "Zoroastrianismo", "answer": "Nagsimula sa Persia", "choices": ["Nagsimula sa Persia", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Ahura Mazda", "answer": "Diyos ng kabutihan at liwanag", "choices": ["Diyos ng kabutihan at liwanag", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Angra Mainyu", "answer": "Diyos ng kasamaan at kadiliman", "choices": ["Diyos ng kasamaan at kadiliman", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Hinduismo", "answer": "Relihiyong nagmula sa India", "choices": ["Relihiyong nagmula sa India", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Judaismo", "answer": "Relihiyong may banal na aklat na Torah", "choices": ["Relihiyong may banal na aklat na Torah", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kristiyanismo", "answer": "Relihiyong nakasentro kay Hesus Kristo", "choices": ["Relihiyong nakasentro kay Hesus Kristo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Islam", "answer": "May Limang Haligi at Qur’an", "choices": ["May Limang Haligi at Qur’an", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Buddhismo", "answer": "Nagtuturo ng pagwakas ng pagdurusa", "choices": ["Nagtuturo ng pagwakas ng pagdurusa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reinkarnasyon", "answer": "Paniniwala sa muling pagsilang", "choices": ["Paniniwala sa muling pagsilang", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Five Pillars of Islam", "answer": "Limang tungkulin ng Muslim", "choices": ["Limang tungkulin ng Muslim", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  7: [{"term": "Confucianism", "answer": "Nagtuturo ng tamang asal at kaayusan", "choices": ["Nagtuturo ng tamang asal at kaayusan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Confucius", "answer": "Nagtatag ng Confucianism", "choices": ["Nagtatag ng Confucianism", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Shintoism", "answer": "Relihiyon ng kalikasan sa Japan", "choices": ["Relihiyon ng kalikasan sa Japan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kami", "answer": "Diyos o espiritu sa Shintoism", "choices": ["Diyos o espiritu sa Shintoism", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Buddhism", "answer": "Relihiyon ng kapayapaan at pagwakas ng pagdurusa", "choices": ["Relihiyon ng kapayapaan at pagwakas ng pagdurusa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Siddhartha Gautama", "answer": "Nagtatag ng Buddhism", "choices": ["Nagtatag ng Buddhism", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nirvana", "answer": "Kalayaan mula sa pagdurusa", "choices": ["Kalayaan mula sa pagdurusa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Torii gate", "answer": "Simbolo ng Shinto shrine", "choices": ["Simbolo ng Shinto shrine", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Paggalang sa magulang", "answer": "Mahalagang turo ng Confucianism", "choices": ["Mahalagang turo ng Confucianism", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Apat na Marangal na Katotohanan", "answer": "Mahalagang aral ng Buddhism", "choices": ["Mahalagang aral ng Buddhism", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  8: [{"term": "Pagsasara ng Constantinople", "answer": "1453 pangyayaring naghanap ng bagong ruta ang Europeo", "choices": ["1453 pangyayaring naghanap ng bagong ruta ang Europeo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Renaissance", "answer": "Muling pagsilang ng sining at kaalaman", "choices": ["Muling pagsilang ng sining at kaalaman", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reformation", "answer": "Pagbabago sa Simbahang Katolika na pinasimulan ni Martin Luther", "choices": ["Pagbabago sa Simbahang Katolika na pinasimulan ni Martin Luther", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Counter-Reformation", "answer": "Tugon ng Simbahang Katolika sa Repormasyon", "choices": ["Tugon ng Simbahang Katolika sa Repormasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Martin Luther", "answer": "Nagpako ng 95 Theses", "choices": ["Nagpako ng 95 Theses", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Leonardo da Vinci", "answer": "Halimbawa ng Renaissance artist at scientist", "choices": ["Halimbawa ng Renaissance artist at scientist", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Council of Trent", "answer": "Pagpupulong para sa reporma ng Simbahan", "choices": ["Pagpupulong para sa reporma ng Simbahan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Printing press", "answer": "Nakatulong sa paglaganap ng ideya", "choices": ["Nakatulong sa paglaganap ng ideya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Humanism", "answer": "Pagtuon sa kakayahan at dignidad ng tao", "choices": ["Pagtuon sa kakayahan at dignidad ng tao", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Bagong ruta sa Asya", "answer": "Hinahanap ng Europeo matapos maapektuhan ang kalakalan", "choices": ["Hinahanap ng Europeo matapos maapektuhan ang kalakalan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  9: [{"term": "Christopher Columbus", "answer": "Nakarating sa Caribbean noong 1492", "choices": ["Nakarating sa Caribbean noong 1492", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Vasco da Gama", "answer": "Nakarating sa India sa pamamagitan ng pag-ikot sa Africa", "choices": ["Nakarating sa India sa pamamagitan ng pag-ikot sa Africa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Ferdinand Magellan", "answer": "Nanguna sa unang paglalayag na nakapaligid sa mundo", "choices": ["Nanguna sa unang paglalayag na nakapaligid sa mundo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Gold, God, Glory", "answer": "Tatlong layunin ng paggalugad", "choices": ["Tatlong layunin ng paggalugad", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Compass", "answer": "Kagamitang pantulong sa nabigasyon", "choices": ["Kagamitang pantulong sa nabigasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Caravel / barko", "answer": "Sasakyang ginamit sa paglalayag", "choices": ["Sasakyang ginamit sa paglalayag", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kolonyalismo", "answer": "Pananakop at pagkontrol sa bagong lupain", "choices": ["Pananakop at pagkontrol sa bagong lupain", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "America", "answer": "Bagong lupain na sinakop ng mga Europeo", "choices": ["Bagong lupain na sinakop ng mga Europeo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pagpapalaganap ng Kristiyanismo", "answer": "Isa sa epekto ng kolonyalismo", "choices": ["Isa sa epekto ng kolonyalismo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pagkuha ng yaman at lupa", "answer": "Epekto ng kolonyalismo sa katutubo", "choices": ["Epekto ng kolonyalismo sa katutubo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  10: [{"term": "Imperyalismo", "answer": "Pagpapalawak ng kapangyarihan sa ibang bansa", "choices": ["Pagpapalawak ng kapangyarihan sa ibang bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Asya at Africa", "answer": "Rehiyong sinakop ng Europe at Japan", "choices": ["Rehiyong sinakop ng Europe at Japan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Hilaw na materyales", "answer": "Dahilan ng pananakop", "choices": ["Dahilan ng pananakop", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pamilihan", "answer": "Lugar na pagbebentahan ng produkto", "choices": ["Lugar na pagbebentahan ng produkto", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Japan", "answer": "Bansang Asyanong naging imperyalista", "choices": ["Bansang Asyanong naging imperyalista", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Europeo", "answer": "Mga bansang nanakop sa Asya at Africa", "choices": ["Mga bansang nanakop sa Asya at Africa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Protectorate", "answer": "Uri ng pagkontrol sa bansa", "choices": ["Uri ng pagkontrol sa bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Colony", "answer": "Lupaing direktang pinamumunuan ng dayuhan", "choices": ["Lupaing direktang pinamumunuan ng dayuhan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Economic imperialism", "answer": "Kontrol sa ekonomiya ng ibang bansa", "choices": ["Kontrol sa ekonomiya ng ibang bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nasyonalismo", "answer": "Pagmamahal sa bansa bilang tugon sa pananakop", "choices": ["Pagmamahal sa bansa bilang tugon sa pananakop", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  11: [{"term": "Enlightenment", "answer": "Panahon ng kaisipang karapatan at katwiran", "choices": ["Panahon ng kaisipang karapatan at katwiran", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "John Locke", "answer": "Nagtaguyod ng natural rights", "choices": ["Nagtaguyod ng natural rights", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Montesquieu", "answer": "Kilala sa separation of powers", "choices": ["Kilala sa separation of powers", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Rousseau", "answer": "Kaugnay ng social contract", "choices": ["Kaugnay ng social contract", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Rebolusyong Amerikano", "answer": "Pakikibaka ng kolonya laban sa Britain", "choices": ["Pakikibaka ng kolonya laban sa Britain", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Declaration of Independence", "answer": "Dokumentong naghayag ng kalayaan ng America", "choices": ["Dokumentong naghayag ng kalayaan ng America", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nasyonalismo", "answer": "Pagmamahal at katapatan sa bansa", "choices": ["Pagmamahal at katapatan sa bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pagkabansa", "answer": "Pagbuo ng pagkakakilanlan ng bayan", "choices": ["Pagbuo ng pagkakakilanlan ng bayan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kalayaan", "answer": "Isa sa ideyang pinalakas ng Enlightenment", "choices": ["Isa sa ideyang pinalakas ng Enlightenment", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Karapatan", "answer": "Prinsipyong mahalaga sa nasyonalismo", "choices": ["Prinsipyong mahalaga sa nasyonalismo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  12: [{"term": "Rebolusyong Pranses", "answer": "Pangyayaring nagpatibay ng liberty, equality, fraternity", "choices": ["Pangyayaring nagpatibay ng liberty, equality, fraternity", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Liberty", "answer": "Kalayaan", "choices": ["Kalayaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Equality", "answer": "Pagkakapantay-pantay", "choices": ["Pagkakapantay-pantay", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Fraternity", "answer": "Pagkakapatiran", "choices": ["Pagkakapatiran", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Estates General", "answer": "Asembleya ng tatlong estate sa France", "choices": ["Asembleya ng tatlong estate sa France", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Bastille", "answer": "Bilangguang sinalakay noong 1789", "choices": ["Bilangguang sinalakay noong 1789", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Declaration of the Rights of Man", "answer": "Dokumentong naghayag ng karapatan", "choices": ["Dokumentong naghayag ng karapatan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Bansang-estado", "answer": "Bansang may pamahalaan at pagkakakilanlan", "choices": ["Bansang may pamahalaan at pagkakakilanlan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Monarkiya", "answer": "Pamumuno ng hari o reyna", "choices": ["Pamumuno ng hari o reyna", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reign of Terror", "answer": "Marahas na yugto ng Rebolusyong Pranses", "choices": ["Marahas na yugto ng Rebolusyong Pranses", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  13: [{"term": "Sepoy Mutiny", "answer": "Pag-aalsa sa India laban sa British", "choices": ["Pag-aalsa sa India laban sa British", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Boxer Rebellion", "answer": "Paglaban sa impluwensiyang dayuhan sa China", "choices": ["Paglaban sa impluwensiyang dayuhan sa China", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Meiji Restoration", "answer": "Modernisasyon ng Japan", "choices": ["Modernisasyon ng Japan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Latin America", "answer": "Rehiyong naghangad ng kalayaan sa Spain at Portugal", "choices": ["Rehiyong naghangad ng kalayaan sa Spain at Portugal", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Simón Bolívar", "answer": "Pinunong lumaban para sa kalayaan sa Latin America", "choices": ["Pinunong lumaban para sa kalayaan sa Latin America", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Rebelyon", "answer": "Marahas na paglaban sa mananakop", "choices": ["Marahas na paglaban sa mananakop", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reporma", "answer": "Mapayapang pagbabago sa sistema", "choices": ["Mapayapang pagbabago sa sistema", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Diplomasya", "answer": "Pakikipag-ugnayan upang maresolba ang isyu", "choices": ["Pakikipag-ugnayan upang maresolba ang isyu", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nasyonalismo", "answer": "Nagbuklod sa mga kolonya laban sa imperyalismo", "choices": ["Nagbuklod sa mga kolonya laban sa imperyalismo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kalayaan", "answer": "Pangunahing layunin ng paglaban", "choices": ["Pangunahing layunin ng paglaban", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  14: [{"term": "Militarismo", "answer": "Pagpapalakas ng hukbo bago WWI", "choices": ["Pagpapalakas ng hukbo bago WWI", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Alyansa", "answer": "Kasunduan ng mga bansa na magtulungan", "choices": ["Kasunduan ng mga bansa na magtulungan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Imperyalismo", "answer": "Kompetisyon sa kolonya at yaman", "choices": ["Kompetisyon sa kolonya at yaman", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nasyonalismo", "answer": "Matinding pagmamahal sa bansa", "choices": ["Matinding pagmamahal sa bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pagpaslang kay Archduke Franz Ferdinand", "answer": "Agarang sanhi ng WWI", "choices": ["Agarang sanhi ng WWI", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Trench warfare", "answer": "Pakikipaglaban sa hukay", "choices": ["Pakikipaglaban sa hukay", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Central Powers", "answer": "Germany, Austria-Hungary at kaalyado", "choices": ["Germany, Austria-Hungary at kaalyado", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Allied Powers", "answer": "Britain, France, Russia at kaalyado", "choices": ["Britain, France, Russia at kaalyado", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Treaty of Versailles", "answer": "Kasunduang nagtapos sa WWI", "choices": ["Kasunduang nagtapos sa WWI", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "League of Nations", "answer": "Samahang itinatag matapos WWI", "choices": ["Samahang itinatag matapos WWI", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  15: [{"term": "Great Depression", "answer": "Malaking krisis pang-ekonomiya pagkatapos ng digmaan", "choices": ["Malaking krisis pang-ekonomiya pagkatapos ng digmaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reparations", "answer": "Bayad-pinsala matapos WWI", "choices": ["Bayad-pinsala matapos WWI", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Treaty of Versailles", "answer": "Kasunduang nagpahirap sa Germany", "choices": ["Kasunduang nagpahirap sa Germany", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "League of Nations", "answer": "Nabigong pigilan ang bagong digmaan", "choices": ["Nabigong pigilan ang bagong digmaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Inflation", "answer": "Pagtaas ng presyo ng bilihin", "choices": ["Pagtaas ng presyo ng bilihin", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Unemployment", "answer": "Kawalan ng trabaho", "choices": ["Kawalan ng trabaho", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Reconstruction", "answer": "Muling pagbangon mula sa digmaan", "choices": ["Muling pagbangon mula sa digmaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Isolationism", "answer": "Pag-iwas sa pakikialam sa ibang bansa", "choices": ["Pag-iwas sa pakikialam sa ibang bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Mandate system", "answer": "Pamamahala sa dating kolonya", "choices": ["Pamamahala sa dating kolonya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pagbangon", "answer": "Tugon ng bansa sa krisis", "choices": ["Tugon ng bansa sa krisis", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  16: [{"term": "Totalitaryanismo", "answer": "Kontrol ng estado sa halos lahat ng aspeto ng buhay", "choices": ["Kontrol ng estado sa halos lahat ng aspeto ng buhay", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Diktador", "answer": "Pinunong may lubos na kapangyarihan", "choices": ["Pinunong may lubos na kapangyarihan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Propaganda", "answer": "Impormasyong ginagamit upang impluwensiyahan ang tao", "choices": ["Impormasyong ginagamit upang impluwensiyahan ang tao", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Censorship", "answer": "Pagkontrol sa impormasyon", "choices": ["Pagkontrol sa impormasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Fascism", "answer": "Ideolohiya nina Mussolini at Hitler", "choices": ["Ideolohiya nina Mussolini at Hitler", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nazism", "answer": "Ideolohiyang pinamunuan ni Hitler", "choices": ["Ideolohiyang pinamunuan ni Hitler", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Communism sa Soviet Union", "answer": "Ideolohiyang pinamunuan ni Stalin", "choices": ["Ideolohiyang pinamunuan ni Stalin", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Demokrasya", "answer": "Pamamahalang may karapatan at partisipasyon", "choices": ["Pamamahalang may karapatan at partisipasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Karapatang pantao", "answer": "Karapatang nilalabag ng totalitaryanismo", "choices": ["Karapatang nilalabag ng totalitaryanismo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "One-party rule", "answer": "Iisang partidong kumokontrol sa pamahalaan", "choices": ["Iisang partidong kumokontrol sa pamahalaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  17: [{"term": "Ikalawang Digmaang Pandaigdig", "answer": "Digmaang pandaigdig noong 1939–1945", "choices": ["Digmaang pandaigdig noong 1939–1945", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Appeasement", "answer": "Pagpapahinuhod sa agresibong bansa", "choices": ["Pagpapahinuhod sa agresibong bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Invasion of Poland", "answer": "Simula ng WWII sa Europe", "choices": ["Simula ng WWII sa Europe", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Axis Powers", "answer": "Germany, Italy, Japan", "choices": ["Germany, Italy, Japan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Allied Powers", "answer": "Britain, Soviet Union, United States at kaalyado", "choices": ["Britain, Soviet Union, United States at kaalyado", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pearl Harbor", "answer": "Pag-atake ng Japan sa US noong 1941", "choices": ["Pag-atake ng Japan sa US noong 1941", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Holocaust", "answer": "Pag-uusig at pagpatay sa mga Hudyo", "choices": ["Pag-uusig at pagpatay sa mga Hudyo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "D-Day", "answer": "Paglusob ng Allies sa Normandy", "choices": ["Paglusob ng Allies sa Normandy", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Atomic bomb", "answer": "Ginamit sa Hiroshima at Nagasaki", "choices": ["Ginamit sa Hiroshima at Nagasaki", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "United Nations", "answer": "Itinatag upang mapanatili ang kapayapaan", "choices": ["Itinatag upang mapanatili ang kapayapaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  18: [{"term": "Cold War", "answer": "Tensiyon ng US at Soviet Union na hindi direktang digmaan", "choices": ["Tensiyon ng US at Soviet Union na hindi direktang digmaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "United States", "answer": "Pinuno ng kapitalistang bloke", "choices": ["Pinuno ng kapitalistang bloke", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Soviet Union", "answer": "Pinuno ng komunistang bloke", "choices": ["Pinuno ng komunistang bloke", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kapitalismo", "answer": "Sistemang nakabatay sa pribadong pag-aari", "choices": ["Sistemang nakabatay sa pribadong pag-aari", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Komunismo", "answer": "Sistemang may kontrol ng estado sa ekonomiya", "choices": ["Sistemang may kontrol ng estado sa ekonomiya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Iron Curtain", "answer": "Simbolo ng pagkakahati ng Europe", "choices": ["Simbolo ng pagkakahati ng Europe", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "NATO", "answer": "Alyansang pinamunuan ng US", "choices": ["Alyansang pinamunuan ng US", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Warsaw Pact", "answer": "Alyansang pinamunuan ng Soviet Union", "choices": ["Alyansang pinamunuan ng Soviet Union", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Arms race", "answer": "Paligsahan sa armas", "choices": ["Paligsahan sa armas", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Space race", "answer": "Paligsahan sa kalawakan", "choices": ["Paligsahan sa kalawakan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  19: [{"term": "Proxy war", "answer": "Digmaang sinusuportahan ng makapangyarihang bansa", "choices": ["Digmaang sinusuportahan ng makapangyarihang bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Korean War", "answer": "Cold War conflict sa Asya", "choices": ["Cold War conflict sa Asya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Vietnam War", "answer": "Cold War conflict sa Timog-Silangang Asya", "choices": ["Cold War conflict sa Timog-Silangang Asya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Afghanistan", "answer": "Lugar ng tunggalian ng Soviet Union", "choices": ["Lugar ng tunggalian ng Soviet Union", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Asya at Africa", "answer": "Rehiyong naapektuhan ng Cold War", "choices": ["Rehiyong naapektuhan ng Cold War", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Non-Aligned Movement", "answer": "Mga bansang hindi kumampi sa US o USSR", "choices": ["Mga bansang hindi kumampi sa US o USSR", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Decolonization", "answer": "Paglaya ng mga kolonya", "choices": ["Paglaya ng mga kolonya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Military aid", "answer": "Tulong militar mula sa superpower", "choices": ["Tulong militar mula sa superpower", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Ideological conflict", "answer": "Banggaan ng kapitalismo at komunismo", "choices": ["Banggaan ng kapitalismo at komunismo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Political instability", "answer": "Isa sa epekto ng Cold War", "choices": ["Isa sa epekto ng Cold War", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  20: [{"term": "Pagbagsak ng Berlin Wall", "answer": "Simbolo ng pagtatapos ng Cold War", "choices": ["Simbolo ng pagtatapos ng Cold War", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "1989", "answer": "Taon ng pagbagsak ng Berlin Wall", "choices": ["Taon ng pagbagsak ng Berlin Wall", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "1991", "answer": "Taon ng pagbuwag ng Soviet Union", "choices": ["Taon ng pagbuwag ng Soviet Union", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Mikhail Gorbachev", "answer": "Pinunong nagpasimula ng glasnost at perestroika", "choices": ["Pinunong nagpasimula ng glasnost at perestroika", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Glasnost", "answer": "Pagiging bukas sa pamahalaan", "choices": ["Pagiging bukas sa pamahalaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Perestroika", "answer": "Reporma sa ekonomiya ng Soviet Union", "choices": ["Reporma sa ekonomiya ng Soviet Union", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Germany reunification", "answer": "Muling pagkakaisa ng Germany", "choices": ["Muling pagkakaisa ng Germany", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Unipolar world", "answer": "Daigdig na pinangungunahan ng iisang superpower", "choices": ["Daigdig na pinangungunahan ng iisang superpower", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Globalization", "answer": "Mas malawak na ugnayang pandaigdig", "choices": ["Mas malawak na ugnayang pandaigdig", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Post-Cold War", "answer": "Panahon pagkatapos ng Cold War", "choices": ["Panahon pagkatapos ng Cold War", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  21: [{"term": "Kilusang demokratiko", "answer": "Kilusan para sa karapatan at partisipasyon", "choices": ["Kilusan para sa karapatan at partisipasyon", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "People Power", "answer": "Halimbawa ng mapayapang demokratikong kilusan", "choices": ["Halimbawa ng mapayapang demokratikong kilusan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Civil rights movement", "answer": "Kilusan para sa pagkakapantay-pantay", "choices": ["Kilusan para sa pagkakapantay-pantay", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Apartheid resistance", "answer": "Pakikibaka laban sa racial segregation", "choices": ["Pakikibaka laban sa racial segregation", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Nelson Mandela", "answer": "Pinuno laban sa apartheid", "choices": ["Pinuno laban sa apartheid", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Karapatang bumoto", "answer": "Mahalagang karapatang demokratiko", "choices": ["Mahalagang karapatang demokratiko", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Malayang pamamahayag", "answer": "Sandigan ng demokrasya", "choices": ["Sandigan ng demokrasya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pakikilahok", "answer": "Gawain ng aktibong mamamayan", "choices": ["Gawain ng aktibong mamamayan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Accountability", "answer": "Pananagutan ng pinuno", "choices": ["Pananagutan ng pinuno", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Rule of law", "answer": "Pangingibabaw ng batas", "choices": ["Pangingibabaw ng batas", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  22: [{"term": "United Nations", "answer": "Samahang pandaigdig para sa kapayapaan", "choices": ["Samahang pandaigdig para sa kapayapaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "1945", "answer": "Taon ng pagkakatatag ng UN", "choices": ["Taon ng pagkakatatag ng UN", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "General Assembly", "answer": "Kapulungan ng lahat ng kasaping bansa", "choices": ["Kapulungan ng lahat ng kasaping bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Security Council", "answer": "Sangay na tumutugon sa seguridad", "choices": ["Sangay na tumutugon sa seguridad", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "UNICEF", "answer": "Ahensiyang tumutulong sa mga bata", "choices": ["Ahensiyang tumutulong sa mga bata", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "WHO", "answer": "Ahensiyang pangkalusugan", "choices": ["Ahensiyang pangkalusugan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "UNESCO", "answer": "Ahensiyang pang-edukasyon at kultura", "choices": ["Ahensiyang pang-edukasyon at kultura", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Philippines", "answer": "Kasaping bansa ng United Nations", "choices": ["Kasaping bansa ng United Nations", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Peacekeeping", "answer": "Pagpapanatili ng kapayapaan", "choices": ["Pagpapanatili ng kapayapaan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Human rights", "answer": "Isa sa itinataguyod ng UN", "choices": ["Isa sa itinataguyod ng UN", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  23: [{"term": "Kahirapan", "answer": "Isyung panlipunan tungkol sa kakulangan ng pangangailangan", "choices": ["Isyung panlipunan tungkol sa kakulangan ng pangangailangan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Diskriminasyon", "answer": "Hindi pantay na pagtrato", "choices": ["Hindi pantay na pagtrato", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Migrasyon", "answer": "Paglipat ng tao sa ibang lugar", "choices": ["Paglipat ng tao sa ibang lugar", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kawalan ng trabaho", "answer": "Suliranin sa hanapbuhay", "choices": ["Suliranin sa hanapbuhay", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Edukasyon", "answer": "Serbisyong mahalaga sa pag-unlad", "choices": ["Serbisyong mahalaga sa pag-unlad", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kalusugan", "answer": "Isyung may kaugnayan sa serbisyong medikal", "choices": ["Isyung may kaugnayan sa serbisyong medikal", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Gender equality", "answer": "Pantay na karapatan ng kasarian", "choices": ["Pantay na karapatan ng kasarian", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Human trafficking", "answer": "Ilegal na pang-aabuso at pagbebenta ng tao", "choices": ["Ilegal na pang-aabuso at pagbebenta ng tao", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Urbanisasyon", "answer": "Paglaki ng mga lungsod", "choices": ["Paglaki ng mga lungsod", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pakikiisa", "answer": "Mabuting tugon sa isyung panlipunan", "choices": ["Mabuting tugon sa isyung panlipunan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  24: [{"term": "Climate change", "answer": "Pangkalikasang isyu ng pag-init ng mundo", "choices": ["Pangkalikasang isyu ng pag-init ng mundo", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Korapsyon", "answer": "Pampolitikang isyu ng pang-aabuso sa kapangyarihan", "choices": ["Pampolitikang isyu ng pang-aabuso sa kapangyarihan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kahirapan", "answer": "Pangkabuhayang isyu", "choices": ["Pangkabuhayang isyu", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Global inequality", "answer": "Hindi pantay na kaunlaran ng bansa", "choices": ["Hindi pantay na kaunlaran ng bansa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Food security", "answer": "Sapat at ligtas na pagkain", "choices": ["Sapat at ligtas na pagkain", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Renewable energy", "answer": "Malinis na mapagkukunan ng enerhiya", "choices": ["Malinis na mapagkukunan ng enerhiya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Deforestation", "answer": "Pagkakalbo ng kagubatan", "choices": ["Pagkakalbo ng kagubatan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pollution", "answer": "Polusyon sa hangin, tubig, o lupa", "choices": ["Polusyon sa hangin, tubig, o lupa", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Conflict", "answer": "Pampolitikang tunggalian", "choices": ["Pampolitikang tunggalian", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Sustainable development", "answer": "Kaunlarang hindi sinisira ang kinabukasan", "choices": ["Kaunlarang hindi sinisira ang kinabukasan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+  25: [{"term": "Mapanagutang mamamayan", "answer": "May malasakit, kaalaman, at pakikilahok", "choices": ["May malasakit, kaalaman, at pakikilahok", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Global citizen", "answer": "Mamamayang may pananagutan sa daigdig", "choices": ["Mamamayang may pananagutan sa daigdig", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Paggalang sa kultura", "answer": "Katangian ng global citizen", "choices": ["Katangian ng global citizen", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pangangalaga sa kapaligiran", "answer": "Responsableng gawain", "choices": ["Responsableng gawain", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Pakikilahok sa komunidad", "answer": "Tungkulin ng mamamayan", "choices": ["Tungkulin ng mamamayan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Critical thinking", "answer": "Mapanuring pag-iisip", "choices": ["Mapanuring pag-iisip", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Volunteerism", "answer": "Boluntaryong pagtulong", "choices": ["Boluntaryong pagtulong", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Digital responsibility", "answer": "Responsableng paggamit ng teknolohiya", "choices": ["Responsableng paggamit ng teknolohiya", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kapayapaan", "answer": "Layunin ng pandaigdigang mamamayan", "choices": ["Layunin ng pandaigdigang mamamayan", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}, {"term": "Kooperasyon", "answer": "Sama-samang pagtugon sa suliranin", "choices": ["Sama-samang pagtugon sa suliranin", "Hindi ito ang tamang sagot", "Bahagyang kaugnay lamang"]}],
+};
+
+function buildTenTasks(lesson, index) {
+  const customTasks = UNIQUE_MISSION_TASKS[index];
+  if (customTasks && customTasks.length >= 10) {
+    return customTasks.slice(0, 10).map(task => ({
+      term: task.term,
+      answer: task.answer,
+      choices: normalizeChoices(task.choices, task.answer)
+    }));
+  }
+
+  const source = [
+    ...tasksFromExistingGameStages(lesson),
+    ...(lesson.questions || []).map(qItem => taskFromQuestion(qItem, lesson.title))
+  ];
+
+  const base = source.length ? source : [{
+    term: lesson.brief || lesson.title,
+    answer: lesson.title,
+    choices: [lesson.title, "Ibang paksa", "Hindi kaugnay"]
+  }];
+
+  const tasks = [];
+  let i = 0;
+  while (tasks.length < 10) {
+    const original = base[i % base.length];
+    const label = i >= base.length ? ` (${Math.floor(i / base.length) + 1})` : "";
+    tasks.push({
+      term: `${original.term}${label}`,
+      answer: original.answer,
+      choices: normalizeChoices(original.choices, original.answer)
+    });
+    i++;
+  }
+  return tasks.slice(0, 10);
+}
+
+function makeTrueFalseStatements(tasks) {
+  return tasks.map((task, idx) => {
+    const makeFalse = idx % 2 === 1;
+    const wrong = task.choices.find(choice => choice !== task.answer) || "hindi tamang paglalarawan";
+    return {
+      text: makeFalse
+        ? `Ang ${task.term} ay tumutukoy sa ${wrong}.`
+        : `Ang ${task.term} ay tumutukoy sa ${task.answer}.`,
+      answer: makeFalse ? "Mali" : "Tama"
+    };
+  });
+}
+
+function convertLessonToTenItemMiniGame(lesson, index) {
+  const tasks = buildTenTasks(lesson, index);
+  lesson.multiGame = true;
+  lesson.gameStages = [
+    {
+      type: "dragDrop",
+      title: `🧲 Drag and Drop: ${lesson.title}`,
+      instruction: "I-drag o i-tap ang konsepto, pagkatapos ilagay sa tamang kahon. May 3 items dito.",
+      tasks: tasks.slice(0, 3)
+    },
+    {
+      type: "matchingGrid",
+      title: `🧩 Matching Type: ${lesson.title}`,
+      instruction: "I-tap ang konsepto sa kaliwa at itugma sa tamang sagot sa kanan. May 3 items dito.",
+      tasks: tasks.slice(3, 6)
+    },
+    {
+      type: "trueFalseDrop",
+      title: `✅❌ Tama o Mali: ${lesson.title}`,
+      instruction: "Ilagay ang pahayag sa TAMA o MALI. May 2 items dito.",
+      statements: makeTrueFalseStatements(tasks.slice(6, 8))
+    },
+    {
+      type: lesson.boss ? "boss" : "finalQuest",
+      title: `👾 Boss Challenge: ${lesson.title}`,
+      instruction: "Sagutin ang huling 2 hamon para makuha ang stamp at unlock code.",
+      tasks: tasks.slice(8, 10)
+    }
+  ];
+}
+
+function normalizeAllLessonsToTenMiniGames() {
+  LESSONS.forEach((lesson, index) => {
+    // Mission 1 is already a special multi-game geography adventure.
+    // Do not overwrite its stages/content.
+    if (index === 0) return;
+
+    // Mission 2 to Mission 26 become 10-item mini-game missions.
+    convertLessonToTenItemMiniGame(lesson, index);
+  });
+}
+
+normalizeAllLessonsToTenMiniGames();
+
 const ACHIEVEMENTS = [
   {id:"first", name:"🗺️ Unang Hakbang", need:1},
   {id:"mapper", name:"🧭 Master Cartographer", need:5},
@@ -576,6 +759,7 @@ function stageTotalItems(stage) {
   if (!stage) return 0;
   if (stage.targets) return stage.targets.length;
   if (stage.tasks) return stage.tasks.length;
+  if (stage.statements) return stage.statements.length;
   if (stage.sequence) return stage.sequence.length;
   return 1;
 }
@@ -614,8 +798,180 @@ function showGameStage() {
 
   if (stage.type === "continents") return renderContinentsStage(stage, choices, result);
   if (stage.type === "timeline") return renderTimelineStage(stage, choices, result);
+  if (stage.type === "dragDrop") return renderDragDropStage(stage, choices, result);
+  if (stage.type === "matchingGrid") return renderMatchingGridStage(stage, choices, result);
+  if (stage.type === "trueFalseDrop") return renderTrueFalseDropStage(stage, choices, result);
   return renderTaskStage(stage, choices, result);
 }
+
+function miniGameStyles() {
+  return `
+    <style>
+      .mg-board{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0}
+      .mg-card,.mg-zone{border:2px dashed rgba(250,204,21,.65);border-radius:14px;padding:12px;margin:8px 0;background:rgba(255,255,255,.08);color:white;min-height:52px;display:flex;align-items:center;justify-content:center;text-align:center;font-weight:700}
+      .mg-card{cursor:grab;border-style:solid;background:rgba(51,65,85,.95)}
+      .mg-card.selected{outline:3px solid #facc15;background:rgba(250,204,21,.25)}
+      .mg-zone.filled{border-style:solid;background:rgba(34,197,94,.22)}
+      .mg-label{color:#facc15;font-weight:900;text-align:center;margin:8px 0}
+      @media(max-width:640px){.mg-board{grid-template-columns:1fr}.mg-card,.mg-zone{font-size:.95rem}}
+    </style>
+  `;
+}
+
+function renderDragDropStage(stage, choices, result) {
+  stageProgress = stageProgress || { matched: {}, selected: null };
+  const answers = shuffleArray(stage.tasks.map(t => t.answer));
+  choices.innerHTML = miniGameStyles() + `
+    <div class="mg-board">
+      <div>
+        <div class="mg-label">Mga Konsepto</div>
+        <div id="dragCards"></div>
+      </div>
+      <div>
+        <div class="mg-label">Tamang Kahon</div>
+        <div id="dropZones"></div>
+      </div>
+    </div>
+    <small>Tip: Sa cellphone, i-tap muna ang konsepto, tapos i-tap ang kahon.</small>
+  `;
+  const cards = document.getElementById("dragCards");
+  const zones = document.getElementById("dropZones");
+
+  stage.tasks.forEach((task, idx) => {
+    if (stageProgress.matched[task.term]) return;
+    const card = document.createElement("div");
+    card.className = "mg-card" + (stageProgress.selected === task.term ? " selected" : "");
+    card.textContent = task.term;
+    card.draggable = true;
+    card.ondragstart = ev => ev.dataTransfer.setData("text/plain", task.term);
+    card.onclick = () => {
+      stageProgress.selected = stageProgress.selected === task.term ? null : task.term;
+      renderDragDropStage(stage, choices, result);
+    };
+    cards.appendChild(card);
+  });
+
+  answers.forEach(answer => {
+    const zone = document.createElement("div");
+    const filledTerm = Object.keys(stageProgress.matched).find(term => stageProgress.matched[term] === answer);
+    zone.className = "mg-zone" + (filledTerm ? " filled" : "");
+    zone.innerHTML = filledTerm ? `✅ <strong>${filledTerm}</strong><br><small>${answer}</small>` : answer;
+    zone.ondragover = ev => ev.preventDefault();
+    zone.ondrop = ev => {
+      ev.preventDefault();
+      checkDragDropMatch(ev.dataTransfer.getData("text/plain"), answer, stage, choices, result);
+    };
+    zone.onclick = () => {
+      if (stageProgress.selected) checkDragDropMatch(stageProgress.selected, answer, stage, choices, result);
+    };
+    zones.appendChild(zone);
+  });
+}
+
+function checkDragDropMatch(term, answer, stage, choices, result) {
+  const task = stage.tasks.find(t => t.term === term);
+  if (!task || stageProgress.matched[term]) return;
+  if (task.answer === answer) {
+    stageProgress.matched[term] = answer;
+    stageProgress.selected = null;
+    score++;
+    playSound("correct");
+    result.innerHTML = `<span class="success">✅ Tama ang pagkakatugma!</span>`;
+    if (Object.keys(stageProgress.matched).length >= stage.tasks.length) {
+      setTimeout(completeStage, 500);
+    } else {
+      setTimeout(() => renderDragDropStage(stage, choices, result), 350);
+    }
+  } else {
+    playSound("wrong");
+    result.innerHTML = `<span class="warning">❌ Hindi tugma. Subukan ulit.</span>`;
+  }
+}
+
+function renderMatchingGridStage(stage, choices, result) {
+  stageProgress = stageProgress || { matched: {}, left: null };
+  const remainingTerms = stage.tasks.filter(t => !stageProgress.matched[t.term]);
+  const answers = shuffleArray(stage.tasks.map(t => t.answer));
+  choices.innerHTML = miniGameStyles() + `
+    <div class="mg-board">
+      <div><div class="mg-label">Column A</div><div id="matchLeft"></div></div>
+      <div><div class="mg-label">Column B</div><div id="matchRight"></div></div>
+    </div>
+  `;
+  const left = document.getElementById("matchLeft");
+  const right = document.getElementById("matchRight");
+
+  stage.tasks.forEach(task => {
+    const item = document.createElement("div");
+    const done = stageProgress.matched[task.term];
+    item.className = "mg-card" + (stageProgress.left === task.term ? " selected" : "") + (done ? " filled" : "");
+    item.textContent = done ? `✅ ${task.term}` : task.term;
+    item.onclick = () => {
+      if (done) return;
+      stageProgress.left = stageProgress.left === task.term ? null : task.term;
+      renderMatchingGridStage(stage, choices, result);
+    };
+    left.appendChild(item);
+  });
+
+  answers.forEach(answer => {
+    const item = document.createElement("div");
+    item.className = "mg-zone";
+    item.textContent = answer;
+    item.onclick = () => {
+      if (!stageProgress.left) return result.innerHTML = `<span class="warning">Pumili muna sa Column A.</span>`;
+      const task = stage.tasks.find(t => t.term === stageProgress.left);
+      if (task.answer === answer) {
+        stageProgress.matched[task.term] = answer;
+        stageProgress.left = null;
+        score++;
+        playSound("correct");
+        result.innerHTML = `<span class="success">✅ Match!</span>`;
+        if (Object.keys(stageProgress.matched).length >= stage.tasks.length) setTimeout(completeStage, 500);
+        else setTimeout(() => renderMatchingGridStage(stage, choices, result), 350);
+      } else {
+        playSound("wrong");
+        result.innerHTML = `<span class="warning">❌ Maling match. Subukan ulit.</span>`;
+      }
+    };
+    right.appendChild(item);
+  });
+}
+
+function renderTrueFalseDropStage(stage, choices, result) {
+  stageProgress = stageProgress || { item: 0 };
+  const statement = stage.statements[stageProgress.item];
+  if (!statement) return completeStage();
+  document.getElementById("questionText").innerHTML += `<h3>📌 Pahayag ${stageProgress.item + 1}/${stage.statements.length}</h3><p>${statement.text}</p>`;
+  choices.innerHTML = miniGameStyles() + `
+    <div class="mg-board">
+      <button onclick="answerTrueFalseDrop('Tama')">✅ TAMA</button>
+      <button onclick="answerTrueFalseDrop('Mali')">❌ MALI</button>
+    </div>
+  `;
+}
+
+function answerTrueFalseDrop(answer) {
+  const lesson = LESSONS[currentMission];
+  const stage = lesson.gameStages[currentStage];
+  const statement = stage.statements[stageProgress.item];
+  const result = document.getElementById("resultText");
+  if (answer === statement.answer) {
+    score++;
+    stageProgress.item++;
+    playSound("correct");
+    result.innerHTML = `<span class="success">✅ Tama!</span>`;
+    setTimeout(() => {
+      result.textContent = "";
+      if (stageProgress.item >= stage.statements.length) completeStage();
+      else showGameStage();
+    }, 650);
+  } else {
+    playSound("wrong");
+    result.innerHTML = `<span class="warning">❌ Mali. Basahin ulit ang pahayag.</span>`;
+  }
+}
+
 function renderContinentsStage(stage, choices, result) {
   stageProgress = stageProgress || { selected: [] };
   choices.innerHTML = "";
@@ -937,13 +1293,20 @@ function toggleMusic() {
 function runTests() {
   console.assert(LESSONS.length === 26, "Dapat 26 ang missions.");
   LESSONS.forEach((l,i) => {
-    console.assert(l.questions.length >= 3 || l.multiGame, `Lesson ${i+1} dapat may questions o multi-game stages.`);
-    l.questions.forEach((qq,j) => {
+    console.assert(l.multiGame, `Lesson ${i+1} dapat mini-game mission.`);
+
+    // Mission 1 is preserved as the special custom geography adventure.
+    // Missions 2 to 26 must show exactly 10 playable mini-game items.
+    if (i > 0) {
+      console.assert(totalGameItems(l) === 10, `Lesson ${i+1} dapat exactly 10 items.`);
+    }
+
+    (l.questions || []).forEach((qq,j) => {
       const shuffled = shuffleQuestion(qq);
       console.assert(shuffled.c[shuffled.a] === qq.c[qq.a], `Shuffle error L${i+1} Q${j+1}`);
     });
   });
-  console.log("✅ AP8 World Quest v2 tests passed.");
+  console.log("✅ AP8 World Quest v3 tests passed: Mission 1 preserved; Missions 2-26 have 10 mini-game items each.");
 }
 
 loadState();
@@ -974,6 +1337,7 @@ window.selectGuild = selectGuild;
 window.openMission = openMission;
 window.answerQuestion = answerQuestion;
 window.nextGameStage = nextGameStage;
+window.answerTrueFalseDrop = answerTrueFalseDrop;
 window.submitCode = submitCode;
 window.closeMission = closeMission;
 window.resetCurrentGuild = resetCurrentGuild;
