@@ -3,35 +3,29 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AP8 World Quest v2</title>
+  <title>AP8 Chronos Citadel v3</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <section id="introScreen" class="intro-screen">
-  <div class="stars"></div>
-
-  <div class="intro-card cinematic">
-    <h1 class="chrono-logo">🌌 CHRONOS CITADEL 🌌</h1>
-    <h2 id="introTitle">Ang Nawawalang Timeline</h2>
-
-    <p id="storyText" class="story-text"></p>
-
-    <div id="guildReveal" class="guild-reveal hidden">
-      <h2>Limang Sinaunang Guild</h2>
-      <div class="guild-cards">
-        <div>🏺<br>Antiqua</div>
-        <div>⛵<br>Navigators</div>
-        <div>👑<br>Empires</div>
-        <div>⚔️<br>Guardians</div>
-        <div>🌍<br>Unity</div>
-      </div>
+    <div class="intro-card">
+      <h1>🌍 AP8 WORLD QUEST v3</h1>
+      <h2>Ang Nawawalang Timeline</h2>
+      <p>
+        Sa loob ng maraming siglo, ang Timeline ng Daigdig ay iniingatan ng
+        <strong>Chronos Citadel</strong>.
+      </p>
+      <p>
+        Ngunit isang araw, dumating ang <strong>Tagabura ng Kasaysayan</strong>
+        at winasak ang mga alaala ng sangkatauhan.
+      </p>
+      <p>
+        Bilang isang Guild, tungkulin ninyong maglakbay sa mga kaharian ng kasaysayan,
+        kumpletuhin ang mga misyon, at ibalik ang Timeline ng Daigdig.
+      </p>
+      <button onclick="enterGame()">⚔️ Simulan ang Paglalakbay</button>
     </div>
-
-    <button id="startJourneyBtn" class="hidden" onclick="enterGame()">
-      ⚔️ SIMULAN ANG PAGLALAKBAY
-    </button>
-  </div>
-</section>
+  </section>
 
   <main id="gameApp" class="hidden">
     <header>
@@ -46,6 +40,7 @@
       <button onclick="showTab('leaderboard')">🏆 Leaderboard</button>
       <button onclick="toggleMusic()" id="musicBtn">🎵 Music On</button>
       <button onclick="resetCurrentGuild()">🔄 Reset Guild</button>
+      <button onclick="window.open('teacher.html', '_blank')">👩‍🏫 Teacher Dashboard</button>
     </nav>
 
     <section class="setup-panel">
@@ -166,6 +161,6 @@
   </dialog>
 
   <div id="toast" class="toast"></div>
-<script type="module" src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

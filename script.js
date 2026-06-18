@@ -35,10 +35,39 @@ const GUILDS = [
 function q(question, choices, answer) { return { q: question, c: choices, a: answer }; }
 
 const LESSONS = [
-  {term:1,title:"Kampo ng mga Manlalakbay",icon:"🗺️",brief:"Unawain ang katangiang pisikal ng daigdig at epekto nito sa pamumuhay.",code:"MAPA",questions:[
+  {term:1,title:"Kampo ng mga Manlalakbay",icon:"🗺️",brief:"Multi-game adventure tungkol sa 7 kontinente, anyong lupa at tubig, Continental Drift, Plate Tectonics, at 5 Tema ng Heograpiya.",code:"MAPA",multiGame:true,questions:[
     q("Ano ang pangunahing gamit ng heograpiya sa kasaysayan?",["Para malaman ang impluwensya ng kapaligiran sa pamumuhay","Para kabisaduhin lang ang mapa","Para pumili ng bakasyon"],0),
     q("Alin ang katangiang pisikal ng daigdig?",["Bundok, ilog, kapatagan, at klima","Pera, presyo, at kita","Batas at eleksyon"],0),
     q("Bakit mahalaga ang klima?",["Nakaaapekto sa hanapbuhay, pananamit, at pagkain","Wala itong epekto","Para lang sa weather forecast"],0)
+  ],gameStages:[
+    {type:"continents",title:"Stage 1: World Map Challenge",instruction:"I-tap ang lahat ng 7 kontinente. Iwasan ang maling lokasyon.",targets:["Asya","Aprika","Hilagang Amerika","Timog Amerika","Europa","Australia/Oceania","Antarctica"],options:["Asya","Karagatang Pasipiko","Aprika","Hilagang Amerika","Bundok Everest","Timog Amerika","Europa","Australia/Oceania","Antarctica","Ilog Nile"]},
+    {type:"match",title:"Stage 2: Anyong Lupa at Anyong Tubig Match",instruction:"Itugma ang termino sa tamang kahulugan.",tasks:[
+      {term:"Bundok",answer:"Mataas na anyong lupa",choices:["Mataas na anyong lupa","Umaagos na anyong tubig","Malawak na anyong tubig"]},
+      {term:"Kapatagan",answer:"Malawak at patag na lupain",choices:["Malawak at patag na lupain","Lupang napapalibutan ng tubig","Malalim na bahagi ng dagat"]},
+      {term:"Ilog",answer:"Umaagos na anyong tubig",choices:["Umaagos na anyong tubig","Pinakamataas na anyong lupa","Tuyong disyerto"]},
+      {term:"Karagatan",answer:"Pinakamalawak na anyong tubig",choices:["Pinakamalawak na anyong tubig","Makitid na daanan sa bundok","Mataas na talampas"]},
+      {term:"Pulo",answer:"Lupang napapalibutan ng tubig",choices:["Lupang napapalibutan ng tubig","Patag na lupain","Nagyeyelong bundok"]}
+    ]},
+    {type:"timeline",title:"Stage 3: Continental Drift Timeline",instruction:"Ayusin ang tamang pagkakasunod-sunod ng ideya.",sequence:["Pangaea","Continental Drift Theory","Paggalaw ng mga Kontinente","Kasalukuyang Kontinente"]},
+    {type:"simulation",title:"Stage 4: Plate Tectonics Simulator",instruction:"Piliin ang posibleng epekto ng galaw ng plate.",tasks:[
+      {term:"Plate Collision / Pagbanggaan",answer:"Mountain Formation",choices:["Mountain Formation","Walang mangyayari","Paglalaho ng kontinente"]},
+      {term:"Plate Separation / Paghihiwalay",answer:"Volcano o bagong crust",choices:["Volcano o bagong crust","Pagbuo ng ulap","Pagiging disyerto agad"]},
+      {term:"Plate Sliding / Pagkiskis",answer:"Earthquake",choices:["Earthquake","Paglamig ng klima","Pagdami ng ilog"]}
+    ]},
+    {type:"wheel",title:"Stage 5: 5 Tema ng Heograpiya Wheel",instruction:"Basahin ang sitwasyon at piliin ang tamang tema.",tasks:[
+      {term:"Ang Pilipinas ay nasa Timog-Silangang Asya.",answer:"Lokasyon",choices:["Lokasyon","Lugar","Paggalaw"]},
+      {term:"Ang Baguio ay malamig at bulubundukin.",answer:"Lugar",choices:["Lugar","Rehiyon","Paggalaw"]},
+      {term:"Maraming tao ang nangingisda sa baybayin.",answer:"Interaksyon ng Tao at Kapaligiran",choices:["Interaksyon ng Tao at Kapaligiran","Lokasyon","Rehiyon"]},
+      {term:"Ang mga OFW ay lumilipat sa ibang bansa para magtrabaho.",answer:"Paggalaw",choices:["Paggalaw","Lugar","Lokasyon"]},
+      {term:"Ang Gitnang Silangan ay rehiyong kilala sa disyerto at langis.",answer:"Rehiyon",choices:["Rehiyon","Lugar","Paggalaw"]}
+    ]},
+    {type:"boss",title:"Final Boss: Restore the World Map",instruction:"Ibalik ang kaalaman sa mapa bago tuluyang mabura ang Timeline.",tasks:[
+      {term:"Ilan ang kontinente ng daigdig?",answer:"7",choices:["7","5","10"]},
+      {term:"Sino ang nagpanukala ng Continental Drift Theory?",answer:"Alfred Wegener",choices:["Alfred Wegener","Isaac Newton","Ferdinand Magellan"]},
+      {term:"Ano ang tawag sa malaking supercontinent noon?",answer:"Pangaea",choices:["Pangaea","Atlantis","Eurasia"]},
+      {term:"Anong paggalaw ng plate ang madalas magdulot ng lindol?",answer:"Sliding / Transform",choices:["Sliding / Transform","Pag-ikot ng mundo","Pag-ulan"]},
+      {term:"Aling tema ang tumutukoy sa paglipat ng tao, produkto, at ideya?",answer:"Paggalaw",choices:["Paggalaw","Lugar","Rehiyon"]}
+    ]}
   ]},
   {term:1,title:"Lambak ng Kabihasnan",icon:"🏺",brief:"Tuklasin kung bakit umusbong ang kabihasnan malapit sa ilog.",code:"ILOG",questions:[
     q("Bakit umusbong ang kabihasnan malapit sa ilog?",["May tubig, pagkain, at matabang lupa","Malamig palagi","Walang panganib doon"],0),
@@ -184,6 +213,8 @@ let currentGuild = localStorage.getItem("ap8_v2_guild") || "";
 let state = blankState();
 let currentMission = null;
 let currentQuestion = 0;
+let currentStage = 0;
+let stageProgress = null;
 let currentShuffled = null;
 let acceptingAnswer = false;
 let score = 0;
@@ -510,6 +541,8 @@ function openMission(index) {
   if (!(state.unlocked || [0]).includes(index)) return toast("Sarado pa ang mission.");
   currentMission = index;
   currentQuestion = 0;
+  currentStage = 0;
+  stageProgress = null;
   currentShuffled = null;
   acceptingAnswer = false;
   score = 0;
@@ -530,8 +563,153 @@ function openMission(index) {
   } else {
     playSound("unlock");
   }
-  showQuestion();
+  if (lesson.multiGame) {
+    showGameStage();
+  } else {
+    showQuestion();
+  }
   document.getElementById("missionDialog").showModal();
+}
+
+
+function stageTotalItems(stage) {
+  if (!stage) return 0;
+  if (stage.targets) return stage.targets.length;
+  if (stage.tasks) return stage.tasks.length;
+  if (stage.sequence) return stage.sequence.length;
+  return 1;
+}
+function totalGameItems(lesson) {
+  return (lesson.gameStages || []).reduce((sum, stage) => sum + stageTotalItems(stage), 0);
+}
+function pillButton(label, onClick) {
+  const btn = document.createElement("button");
+  btn.textContent = label;
+  btn.onclick = onClick;
+  btn.style.margin = "6px";
+  btn.style.width = "calc(50% - 12px)";
+  btn.style.textAlign = "center";
+  return btn;
+}
+function showGameStage() {
+  const lesson = LESSONS[currentMission];
+  const stage = lesson.gameStages[currentStage];
+  const qBox = document.getElementById("questionText");
+  const choices = document.getElementById("choices");
+  const result = document.getElementById("resultText");
+
+  if (!stage) return finishMission();
+
+  acceptingAnswer = true;
+  result.textContent = "";
+  choices.innerHTML = "";
+  qBox.innerHTML = `
+    <div class="boss-intro" style="border-color:#facc15;background:rgba(250,204,21,.08)">
+      <strong>🎮 ${stage.title}</strong><br>
+      <small>Stage ${currentStage + 1}/${lesson.gameStages.length}</small>
+      <p>${stage.instruction}</p>
+      <p><strong>Score:</strong> ${score}/${totalGameItems(lesson)}</p>
+    </div>
+  `;
+
+  if (stage.type === "continents") return renderContinentsStage(stage, choices, result);
+  if (stage.type === "timeline") return renderTimelineStage(stage, choices, result);
+  return renderTaskStage(stage, choices, result);
+}
+function renderContinentsStage(stage, choices, result) {
+  stageProgress = stageProgress || { selected: [] };
+  choices.innerHTML = "";
+  stage.options.forEach(option => {
+    const btn = pillButton(stageProgress.selected.includes(option) ? `✅ ${option}` : option, () => {
+      if (!acceptingAnswer) return;
+      if (stage.targets.includes(option)) {
+        if (!stageProgress.selected.includes(option)) {
+          stageProgress.selected.push(option);
+          score++;
+          playSound("correct");
+          result.innerHTML = `<span class="success">✅ Tama! ${stageProgress.selected.length}/${stage.targets.length} kontinente.</span>`;
+        }
+        if (stageProgress.selected.length >= stage.targets.length) return completeStage();
+      } else {
+        result.innerHTML = `<span class="warning">❌ Hindi kontinente iyan. Piliin ang 7 kontinente lamang.</span>`;
+        playSound("wrong");
+      }
+      renderContinentsStage(stage, choices, result);
+    });
+    if (stageProgress.selected.includes(option)) btn.disabled = true;
+    choices.appendChild(btn);
+  });
+}
+function renderTaskStage(stage, choices, result) {
+  stageProgress = stageProgress || { item: 0 };
+  const task = stage.tasks[stageProgress.item];
+  if (!task) return completeStage();
+  const icon = stage.type === "match" ? "🧩" : stage.type === "simulation" ? "🌋" : stage.type === "wheel" ? "🎡" : "👾";
+  document.getElementById("questionText").innerHTML += `<h3>${icon} ${task.term}</h3>`;
+  choices.innerHTML = "";
+  shuffleArray(task.choices).forEach(choice => {
+    choices.appendChild(pillButton(choice, () => {
+      if (!acceptingAnswer) return;
+      if (choice === task.answer) {
+        score++;
+        stageProgress.item++;
+        result.innerHTML = `<span class="success">✅ Tama!</span>`;
+        playSound("correct");
+        setTimeout(() => {
+          result.textContent = "";
+          if (stageProgress.item >= stage.tasks.length) completeStage();
+          else showGameStage();
+        }, 650);
+      } else {
+        result.innerHTML = `<span class="warning">❌ Try again. Hanapin ang mas tamang sagot.</span>`;
+        playSound("wrong");
+      }
+    }));
+  });
+}
+function renderTimelineStage(stage, choices, result) {
+  stageProgress = stageProgress || { next: 0, picked: [], pool: shuffleArray(stage.sequence) };
+  const needed = stage.sequence[stageProgress.next];
+  document.getElementById("questionText").innerHTML += `
+    <h3>⏳ Piliin ang susunod: ${stageProgress.next + 1}/${stage.sequence.length}</h3>
+    <p><strong>Nabuo:</strong> ${stageProgress.picked.join(" → ") || "Wala pa"}</p>
+  `;
+  choices.innerHTML = "";
+  stageProgress.pool.forEach(item => {
+    choices.appendChild(pillButton(item, () => {
+      if (!acceptingAnswer) return;
+      if (item === needed) {
+        score++;
+        stageProgress.picked.push(item);
+        stageProgress.next++;
+        stageProgress.pool = stageProgress.pool.filter(x => x !== item);
+        result.innerHTML = `<span class="success">✅ Tama ang pagkakasunod!</span>`;
+        playSound("correct");
+        setTimeout(() => {
+          result.textContent = "";
+          if (stageProgress.next >= stage.sequence.length) completeStage();
+          else showGameStage();
+        }, 650);
+      } else {
+        result.innerHTML = `<span class="warning">❌ Hindi pa iyan ang susunod. Balikan ang simula: Pangaea muna.</span>`;
+        playSound("wrong");
+      }
+    }));
+  });
+}
+function completeStage() {
+  acceptingAnswer = false;
+  stageProgress = null;
+  const lesson = LESSONS[currentMission];
+  const result = document.getElementById("resultText");
+  const choices = document.getElementById("choices");
+  currentStage++;
+  if (currentStage >= lesson.gameStages.length) return finishMission();
+  result.innerHTML = `<span class="success">🏆 Stage Complete! +Progress unlocked.</span>`;
+  choices.innerHTML = `<button onclick="nextGameStage()">➡️ Next Stage</button>`;
+}
+function nextGameStage() {
+  showGameStage();
 }
 
 function shuffleArray(arr) {
@@ -590,12 +768,12 @@ function answerQuestion(choiceIndex) {
 
 async function finishMission() {
   const lesson = LESSONS[currentMission];
-  const pass = lesson.boss ? bossHp <= 0 : score >= 2;
+  const pass = lesson.multiGame ? score >= totalGameItems(lesson) : (lesson.boss ? bossHp <= 0 : score >= 2);
   const result = document.getElementById("resultText");
   document.getElementById("choices").innerHTML = "";
 
   if (!pass) {
-    result.innerHTML = `<span class="warning">Iskor: ${score}/${lesson.questions.length}. Subukan muli.</span>`;
+    result.innerHTML = `<span class="warning">Iskor: ${score}/${lesson.multiGame ? totalGameItems(lesson) : lesson.questions.length}. Subukan muli.</span>`;
     return;
   }
 
@@ -611,7 +789,7 @@ async function finishMission() {
 
   result.innerHTML = `
     <span class="success">
-      ✅ Misyon Tapos! Iskor: ${score}/${lesson.questions.length}<br>
+      ✅ Misyon Tapos! Iskor: ${score}/${lesson.multiGame ? totalGameItems(lesson) : lesson.questions.length}<br>
       📘 May passport stamp na ang guild.${placeText}<br><br>
       🔑 Lihim na Code: <strong>${lesson.code}</strong><br>
       I-type ang code sa Missions tab para mabuksan ang susunod.
@@ -759,7 +937,7 @@ function toggleMusic() {
 function runTests() {
   console.assert(LESSONS.length === 26, "Dapat 26 ang missions.");
   LESSONS.forEach((l,i) => {
-    console.assert(l.questions.length >= 3, `Lesson ${i+1} dapat may 3 questions.`);
+    console.assert(l.questions.length >= 3 || l.multiGame, `Lesson ${i+1} dapat may questions o multi-game stages.`);
     l.questions.forEach((qq,j) => {
       const shuffled = shuffleQuestion(qq);
       console.assert(shuffled.c[shuffled.a] === qq.c[qq.a], `Shuffle error L${i+1} Q${j+1}`);
@@ -795,6 +973,7 @@ window.selectSection = selectSection;
 window.selectGuild = selectGuild;
 window.openMission = openMission;
 window.answerQuestion = answerQuestion;
+window.nextGameStage = nextGameStage;
 window.submitCode = submitCode;
 window.closeMission = closeMission;
 window.resetCurrentGuild = resetCurrentGuild;
